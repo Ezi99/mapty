@@ -18,6 +18,7 @@ class App {
     this.#mapZoomLevel = 13;
     this.#workouts = [];
     this._getPosition();
+    this._getLocalStorage();
     form.addEventListener("submit", this._newWorkout.bind(this));
     inputType.addEventListener("change", this._toggleElevationField);
     containerWorkouts.addEventListener("click", this._moveToPopup.bind(this));
@@ -47,6 +48,7 @@ class App {
     }).addTo(this.#map);
 
     this.#map.on("click", this._showForm.bind(this));
+    this.#workouts.forEach((workout) => this._renderWorkoutMarker(workout));
   }
 
   _showForm(event) {
@@ -108,6 +110,7 @@ class App {
     this._renderWorkoutMarker(workout);
     this._renderWorkout(workout);
     this._hideForm();
+    this._setLocalStorage();
   }
 
   _renderWorkout(workout) {
@@ -188,22 +191,62 @@ class App {
       });
     }
   }
+
+  _setLocalStorage() {
+    localStorage.setItem("workouts", JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem("workouts"));
+
+    console.log(data);
+
+    if (data) {
+      data.forEach((stringWorkout) => {
+        if (stringWorkout.type === "running") {
+          this.#workouts.push(
+            new Running(
+              stringWorkout.distance,
+              stringWorkout.duration,
+              stringWorkout.coords,
+              stringWorkout.cadence,
+              stringWorkout.date
+            )
+          );
+        } else {
+          this.#workouts.push(
+            new Cycling(
+              stringWorkout.distance,
+              stringWorkout.duration,
+              stringWorkout.coords,
+              stringWorkout.elevationGain,
+              stringWorkout.date
+            )
+          );
+        }
+      });
+
+      this.#workouts.forEach((workout) => this._renderWorkout(workout));
+    }
+  }
 }
 
 class Workout {
-  date = new Date();
   id = (Date.now() + "").slice(-10);
+  date;
   distance;
   duration;
   coords;
   type;
   description;
 
-  constructor(type, distance, duration, coords) {
+  constructor(type, distance, duration, coords, date = new Date()) {
     this.type = type;
     this.distance = distance;
     this.duration = duration;
     this.coords = coords;
+    this.date = new Date(date);
+    console.log(this.date);
     this._setDescription();
   }
 
@@ -232,8 +275,8 @@ class Running extends Workout {
   cadence;
   pace;
 
-  constructor(distance, duration, coords, cadence) {
-    super("running", distance, duration, coords);
+  constructor(distance, duration, coords, cadence, date) {
+    super("running", distance, duration, coords, date);
     this.cadence = cadence;
     this._calcPace();
   }
@@ -248,8 +291,8 @@ class Cycling extends Workout {
   elevationGain;
   speed;
 
-  constructor(distance, duration, coords, elevationGain) {
-    super("cycling", distance, duration, coords);
+  constructor(distance, duration, coords, elevationGain, date) {
+    super("cycling", distance, duration, coords, date);
     this.elevationGain = elevationGain;
     this._calcSpeed();
   }
