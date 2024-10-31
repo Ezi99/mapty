@@ -199,8 +199,6 @@ class App {
   _getLocalStorage() {
     const data = JSON.parse(localStorage.getItem("workouts"));
 
-    console.log(data);
-
     if (data) {
       data.forEach((stringWorkout) => {
         if (stringWorkout.type === "running") {
@@ -246,7 +244,6 @@ class Workout {
     this.duration = duration;
     this.coords = coords;
     this.date = new Date(date);
-    console.log(this.date);
     this._setDescription();
   }
 
